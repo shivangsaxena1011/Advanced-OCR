@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.schemas.document import BlockUpdateRequest, DocumentResult, OCRBlock, ProcessingSummary
@@ -43,7 +44,8 @@ async def upload_document(
     # Process through pipeline
     try:
         pipeline = get_pipeline()
-        doc_result = pipeline.process_document(
+        doc_result = await run_in_threadpool(
+            pipeline.process_document,
             doc_id=doc_id,
             file_path=file_path,
             original_filename=file.filename,
