@@ -130,13 +130,13 @@ docker compose up --build
 Run the full automated test suite:
 
 ```bash
-# Backend pytest suite (14 unit & integration tests)
-backend\.venv\Scripts\pytest backend\tests
+# Backend pytest suite (unit & integration tests)
+pytest backend/tests
 
-# End-to-end multi-document pipeline verification
-backend\.venv\Scripts\python.exe scripts\verify_full_pipeline.py
+# End-to-end pipeline benchmark
+python scripts/benchmark_pipeline.py
 
-# Frontend TypeScript & build check
+# Frontend TypeScript & production build
 cd frontend && npm run build
 ```
 

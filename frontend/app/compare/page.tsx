@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { DocumentResult } from "@/types/document";
-import { listDocuments } from "@/lib/api";
+import { listDocuments, compareDocuments } from "@/lib/api";
 
 export default function ComparePage() {
   const [documents, setDocuments] = useState<DocumentResult[]>([]);
@@ -46,15 +46,7 @@ export default function ComparePage() {
     setComparing(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/documents/compare", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_a_id: docAId, doc_b_id: docBId }),
-      });
-      if (!res.ok) {
-        throw new Error("Comparison failed");
-      }
-      const data = await res.json();
+      const data = await compareDocuments(docAId, docBId);
       setCompareResult(data);
     } catch (err: any) {
       setError(err.message || "Failed to compare documents");

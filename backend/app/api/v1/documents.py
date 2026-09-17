@@ -279,22 +279,25 @@ async def compare_documents(payload: dict):
 
 @router.get("/files/processed/{filename}")
 async def serve_processed_file(filename: str):
-
-
-
-    safe_path = (settings.PROCESSED_PATH / filename).resolve()
-    if not str(safe_path).startswith(str(settings.PROCESSED_PATH.resolve())):
+    clean_name = Path(filename).name
+    safe_path = (settings.PROCESSED_PATH / clean_name).resolve()
+    try:
+        safe_path.relative_to(settings.PROCESSED_PATH.resolve())
+    except ValueError:
         raise HTTPException(status_code=403, detail="Access denied")
-    if not safe_path.exists():
+    if not safe_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path=safe_path, media_type="image/png")
 
 
 @router.get("/files/thumbnails/{filename}")
 async def serve_thumbnail_file(filename: str):
-    safe_path = (settings.THUMBNAIL_PATH / filename).resolve()
-    if not str(safe_path).startswith(str(settings.THUMBNAIL_PATH.resolve())):
+    clean_name = Path(filename).name
+    safe_path = (settings.THUMBNAIL_PATH / clean_name).resolve()
+    try:
+        safe_path.relative_to(settings.THUMBNAIL_PATH.resolve())
+    except ValueError:
         raise HTTPException(status_code=403, detail="Access denied")
-    if not safe_path.exists():
+    if not safe_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path=safe_path, media_type="image/png")

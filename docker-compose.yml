@@ -12,8 +12,8 @@ services:
       - OCR_ENGINE=paddleocr
       - OCR_LANGUAGE=en
       - OCR_USE_GPU=false
-      - LLM_PROVIDER=mock
-      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - LLM_PROVIDER=grounded
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,*
     volumes:
       - ./backend/storage:/app/storage
     restart: unless-stopped

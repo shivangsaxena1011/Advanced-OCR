@@ -14,7 +14,13 @@ import {
   Info,
 } from "lucide-react";
 import { DocumentResult, OCRBlock } from "@/types/document";
-import { getDocument, updateBlock } from "@/lib/api";
+import {
+  getDocument,
+  updateBlock,
+  searchDocument,
+  getDownloadUrl,
+  getExportUrl,
+} from "@/lib/api";
 import DocumentCanvas from "@/components/viewer/DocumentCanvas";
 
 import BlockInspector from "@/components/inspector/BlockInspector";
@@ -70,23 +76,17 @@ export default function DocumentWorkspacePage({
       return;
     }
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/v1/documents/${docId}/search?q=${encodeURIComponent(
-          query
-        )}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data.matches || []);
-        if (data.matches && data.matches.length > 0) {
-          setActiveMatchIndex(0);
-          jumpToMatch(data.matches[0]);
-        } else {
-          setActiveMatchIndex(-1);
-        }
+      const data = await searchDocument(docId, query);
+      setSearchResults(data.matches || []);
+      if (data.matches && data.matches.length > 0) {
+        setActiveMatchIndex(0);
+        jumpToMatch(data.matches[0]);
+      } else {
+        setActiveMatchIndex(-1);
       }
     } catch {
-      // ignore
+      setSearchResults([]);
+      setActiveMatchIndex(-1);
     }
   };
 
@@ -287,7 +287,7 @@ export default function DocumentWorkspacePage({
 
           {/* Download Original File */}
           <a
-            href={`http://localhost:8000/api/v1/documents/${docId}/download`}
+            href={getDownloadUrl(docId)}
             download={document.filename}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-sm"
             title="Download Original Document File"
@@ -307,7 +307,7 @@ export default function DocumentWorkspacePage({
             </button>
             <div className="absolute right-0 mt-1 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl p-1.5 hidden group-hover:block z-50">
               <a
-                href={`http://localhost:8000/api/v1/documents/${docId}/download`}
+                href={getDownloadUrl(docId)}
                 download={document.filename}
                 className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-blue-400 hover:text-white hover:bg-slate-800 transition border-b border-slate-800/80 mb-1"
               >
@@ -315,7 +315,7 @@ export default function DocumentWorkspacePage({
                 <span className="text-[10px] text-blue-400 font-mono">source</span>
               </a>
               <a
-                href={`http://localhost:8000/api/v1/documents/${docId}/export/markdown`}
+                href={getExportUrl(docId, "markdown")}
                 target="_blank"
                 download
                 className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
@@ -325,7 +325,7 @@ export default function DocumentWorkspacePage({
               </a>
 
               <a
-                href={`http://localhost:8000/api/v1/documents/${docId}/export/json`}
+                href={getExportUrl(docId, "json")}
                 target="_blank"
                 download
                 className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
@@ -334,7 +334,7 @@ export default function DocumentWorkspacePage({
                 <span className="text-[10px] text-slate-500 font-mono">.json</span>
               </a>
               <a
-                href={`http://localhost:8000/api/v1/documents/${docId}/export/csv`}
+                href={getExportUrl(docId, "csv")}
                 target="_blank"
                 download
                 className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
@@ -343,7 +343,7 @@ export default function DocumentWorkspacePage({
                 <span className="text-[10px] text-slate-500 font-mono">.csv</span>
               </a>
               <a
-                href={`http://localhost:8000/api/v1/documents/${docId}/export/text`}
+                href={getExportUrl(docId, "text")}
                 target="_blank"
                 download
                 className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
@@ -352,7 +352,7 @@ export default function DocumentWorkspacePage({
                 <span className="text-[10px] text-slate-500 font-mono">.txt</span>
               </a>
               <a
-                href={`http://localhost:8000/api/v1/documents/${docId}/export/html`}
+                href={getExportUrl(docId, "html")}
                 target="_blank"
                 download
                 className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"

@@ -34,7 +34,7 @@ class Settings(BaseModel):
     OCR_USE_GPU: bool = os.getenv("OCR_USE_GPU", "false").lower() == "true"
     
     # LLM Settings
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "mock")
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "grounded")
     LLM_API_KEY: str | None = os.getenv("LLM_API_KEY", None)
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
     LLM_BASE_URL: str | None = os.getenv("LLM_BASE_URL", None)
@@ -44,8 +44,9 @@ class Settings(BaseModel):
         origin.strip()
         for origin in os.getenv(
             "CORS_ORIGINS",
-            "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000"
+            "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,*"
         ).split(",")
+        if origin.strip()
     ]
 
 settings = Settings()

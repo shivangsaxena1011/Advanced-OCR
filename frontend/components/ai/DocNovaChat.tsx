@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Bot, Send, Sparkles, MapPin, AlertCircle, Loader2 } from "lucide-react";
 import { BBox } from "@/types/document";
+import { askDocNova } from "@/lib/api";
 
 interface CitationSource {
   page: number;
@@ -55,17 +56,7 @@ export default function DocNovaChat({
     setLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/documents/${documentId}/ask`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userQuestion }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to get answer");
-      }
-
-      const data = await res.json();
+      const data = await askDocNova(documentId, userQuestion);
       const aiMsg: ChatMessage = {
         id: `ai_${Date.now()}`,
         sender: "ai",

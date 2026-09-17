@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { FileText, LayoutDashboard, Upload, FileDiff, BookOpen, Layers } from "lucide-react";
+import { API_BASE } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "AORL — Advanced OCR with Layout Understanding",
@@ -62,7 +63,7 @@ export default function RootLayout({
                 <span className="hidden sm:inline">Compare</span>
               </Link>
               <a
-                href="http://localhost:8000/docs"
+                href={`${API_BASE}/docs`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition"
