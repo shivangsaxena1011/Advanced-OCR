@@ -83,7 +83,16 @@ class FileStorageService:
         return doc_id, target_path
 
     @classmethod
+    def get_upload_path(cls, doc_id: str) -> Optional[Path]:
+        """Finds the saved raw upload file matching doc_id regardless of extension."""
+        for f in settings.UPLOAD_PATH.glob(f"{doc_id}.*"):
+            if f.is_file():
+                return f
+        return None
+
+    @classmethod
     def save_page_image(cls, doc_id: str, page_num: int, image: Image.Image) -> tuple[str, Path]:
+
         """Saves page image and returns (relative_url, path)."""
         filename = f"{doc_id}_p{page_num}.png"
         path = settings.PROCESSED_PATH / filename

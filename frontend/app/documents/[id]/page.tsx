@@ -114,7 +114,7 @@ export default function DocumentWorkspacePage({
     jumpToMatch(searchResults[prevIdx]);
   };
 
-  // Keyboard shortcuts (Ctrl+F, Esc)
+  // Keyboard shortcuts (Ctrl+F, Esc, PageUp, PageDown)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
@@ -126,11 +126,20 @@ export default function DocumentWorkspacePage({
         } else {
           setSelectedBlock(null);
         }
+      } else if (e.key === "PageDown" || (e.altKey && e.key === "ArrowRight")) {
+        if (document) {
+          setActivePageNum((p) => Math.min(document.pages.length, p + 1));
+          setSelectedBlock(null);
+        }
+      } else if (e.key === "PageUp" || (e.altKey && e.key === "ArrowLeft")) {
+        setActivePageNum((p) => Math.max(1, p - 1));
+        setSelectedBlock(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSearch]);
+  }, [showSearch, document]);
+
 
 
   if (loading) {
@@ -276,6 +285,17 @@ export default function DocumentWorkspacePage({
             <span className="hidden md:inline">Boxes</span>
           </button>
 
+          {/* Download Original File */}
+          <a
+            href={`http://localhost:8000/api/v1/documents/${docId}/download`}
+            download={document.filename}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-sm"
+            title="Download Original Document File"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Download</span>
+          </a>
+
           {/* Export Dropdown */}
           <div className="relative group">
             <button
@@ -285,7 +305,15 @@ export default function DocumentWorkspacePage({
               <Download className="w-3.5 h-3.5 text-blue-400" />
               <span>Export</span>
             </button>
-            <div className="absolute right-0 mt-1 w-44 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl p-1.5 hidden group-hover:block z-50">
+            <div className="absolute right-0 mt-1 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl p-1.5 hidden group-hover:block z-50">
+              <a
+                href={`http://localhost:8000/api/v1/documents/${docId}/download`}
+                download={document.filename}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-blue-400 hover:text-white hover:bg-slate-800 transition border-b border-slate-800/80 mb-1"
+              >
+                <span>Original Document</span>
+                <span className="text-[10px] text-blue-400 font-mono">source</span>
+              </a>
               <a
                 href={`http://localhost:8000/api/v1/documents/${docId}/export/markdown`}
                 target="_blank"
@@ -295,6 +323,7 @@ export default function DocumentWorkspacePage({
                 <span>Markdown</span>
                 <span className="text-[10px] text-slate-500 font-mono">.md</span>
               </a>
+
               <a
                 href={`http://localhost:8000/api/v1/documents/${docId}/export/json`}
                 target="_blank"
@@ -404,10 +433,21 @@ export default function DocumentWorkspacePage({
           <DocumentCanvas
             key={activePage.page}
             page={activePage}
+            totalPages={document.pages.length}
             selectedBlockId={selectedBlock?.id || null}
             onSelectBlock={(block) => setSelectedBlock(block)}
             showBoxes={showBoxes}
+            onToggleShowBoxes={() => setShowBoxes(!showBoxes)}
             showConfidence={showConfidence}
+            onToggleConfidence={() => setShowConfidence(!showConfidence)}
+            onPrevPage={() => {
+              setActivePageNum((p) => Math.max(1, p - 1));
+              setSelectedBlock(null);
+            }}
+            onNextPage={() => {
+              setActivePageNum((p) => Math.min(document.pages.length, p + 1));
+              setSelectedBlock(null);
+            }}
             matchingBlockIds={
               new Set(
                 searchResults
@@ -424,7 +464,9 @@ export default function DocumentWorkspacePage({
           activePageNum={activePageNum}
           selectedBlock={selectedBlock}
           onClose={() => setSelectedBlock(null)}
+          onSelectBlock={(b) => setSelectedBlock(b)}
           onUpdateText={handleUpdateBlockText}
+
           onSelectEntity={(e) => {
             setActivePageNum(e.page);
             if (e.bbox) {

@@ -16,9 +16,8 @@ export default function ThumbnailRail({
   activePage,
   onSelectPage,
 }: ThumbnailRailProps) {
-  if (pages.length <= 1) return null;
-
   return (
+
     <div className="w-48 border-r border-slate-800 bg-[#0c111c] flex flex-col h-full overflow-y-auto p-3 space-y-3 shrink-0">
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">

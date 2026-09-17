@@ -34,6 +34,7 @@ interface BlockInspectorProps {
   activePageNum: number;
   selectedBlock: OCRBlock | null;
   onClose: () => void;
+  onSelectBlock?: (block: OCRBlock) => void;
   onUpdateText?: (blockId: string, newText: string) => void;
   onSelectEntity?: (entity: EntityResult) => void;
   onSelectField?: (field: ExtractedField) => void;
@@ -42,6 +43,7 @@ interface BlockInspectorProps {
   onJumpToSource: (page: number, bbox?: any, blockId?: string) => void;
 }
 
+
 type TabType = "ocr" | "layout" | "entities" | "tables" | "fields" | "ai";
 
 export default function BlockInspector({
@@ -49,6 +51,7 @@ export default function BlockInspector({
   activePageNum,
   selectedBlock,
   onClose,
+  onSelectBlock,
   onUpdateText,
   onSelectEntity,
   onSelectField,
@@ -56,6 +59,7 @@ export default function BlockInspector({
   onSelectLayoutBlock,
   onJumpToSource,
 }: BlockInspectorProps) {
+
   const [activeTab, setActiveTab] = useState<TabType>("ocr");
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -266,37 +270,121 @@ export default function BlockInspector({
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-slate-400" />
-                    Coordinates (Pixels)
+                    Coordinates & Dimensions (Pixels)
                   </label>
                   <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 font-mono text-[11px] space-y-1 text-slate-300">
                     <div className="flex justify-between">
                       <span className="text-slate-500">Top-Left:</span>
                       <span>
-                        {Math.round(selectedBlock.bbox.x1)},{" "}
-                        {Math.round(selectedBlock.bbox.y1)}
+                        [{Math.round(selectedBlock.bbox.x1)}, {Math.round(selectedBlock.bbox.y1)}]
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Bottom-Right:</span>
                       <span>
-                        {Math.round(selectedBlock.bbox.x2)},{" "}
-                        {Math.round(selectedBlock.bbox.y2)}
+                        [{Math.round(selectedBlock.bbox.x2)}, {Math.round(selectedBlock.bbox.y2)}]
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Dimensions (W×H):</span>
+                      <span className="text-blue-300">
+                        {Math.round(Math.max(0, selectedBlock.bbox.x2 - selectedBlock.bbox.x1))} ×{" "}
+                        {Math.round(Math.max(0, selectedBlock.bbox.y2 - selectedBlock.bbox.y1))} px
                       </span>
                     </div>
                   </div>
                 </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={onClose}
+                    className="w-full py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition text-center"
+                  >
+                    View All Page Blocks
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-slate-500 space-y-2">
-                <FileText className="w-8 h-8 mx-auto text-slate-600 stroke-[1.5]" />
-                <p className="text-xs font-medium text-slate-400">No Block Selected</p>
-                <p className="text-[11px] text-slate-500">
-                  Click any OCR bounding box in the viewer to inspect text and coordinates.
-                </p>
+              <div className="p-4 space-y-3">
+                {/* Page-Level OCR Summary */}
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-200">
+                      Page {activePageNum} Overview
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40">
+                      {activePage?.ocr_blocks.length || 0} blocks
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Average Page Confidence:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {activePage && activePage.ocr_blocks.length > 0
+                        ? `${Math.round(
+                            (activePage.ocr_blocks.reduce((acc, b) => acc + b.confidence, 0) /
+                              activePage.ocr_blocks.length) *
+                              100
+                          )}%`
+                        : "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Page-Level Blocks List */}
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-0.5">
+                    Recognized Blocks on Page {activePageNum}
+                  </p>
+                  {activePage && activePage.ocr_blocks.length > 0 ? (
+                    <div className="space-y-1.5 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+                      {activePage.ocr_blocks.map((b) => (
+                        <div
+                          key={b.id}
+                          onClick={() => onSelectBlock && onSelectBlock(b)}
+                          className="p-2.5 rounded-lg border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900 hover:border-slate-700 cursor-pointer transition space-y-1 group"
+                        >
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="font-mono text-blue-400 group-hover:text-blue-300 font-semibold">
+                              {b.id}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded font-mono font-bold ${
+                                b.confidence >= 0.9
+                                  ? "bg-emerald-950/60 text-emerald-400"
+                                  : b.confidence >= 0.75
+                                  ? "bg-amber-950/60 text-amber-400"
+                                  : "bg-red-950/60 text-red-400"
+                              }`}
+                            >
+                              {Math.round(b.confidence * 100)}%
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-200 line-clamp-2 font-mono group-hover:text-white">
+                            {b.text}
+                          </p>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-0.5">
+                            <span>
+                              [{Math.round(b.bbox.x1)}, {Math.round(b.bbox.y1)}]
+                            </span>
+                            <span>
+                              {Math.round(b.bbox.x2 - b.bbox.x1)}×
+                              {Math.round(b.bbox.y2 - b.bbox.y1)}px
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-slate-500">
+                      <p className="text-xs">No text recognized on this page.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
         )}
+
 
         {/* TAB 2: Layout Blocks */}
         {activeTab === "layout" && (

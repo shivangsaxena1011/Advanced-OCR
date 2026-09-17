@@ -101,4 +101,11 @@ def test_upload_valid_image():
     updated_doc = patch_res.json()["document"]
     assert updated_doc["pages"][0]["ocr_blocks"][0]["text"] == "CORRECTED INVOICE #9988"
 
+    # Verify Download Original Document endpoint
+    download_res = client.get(f"/api/v1/documents/{doc_id}/download")
+    assert download_res.status_code == 200
+    assert len(download_res.content) > 0
+    assert "image/png" in download_res.headers.get("content-type", "") or "application/octet-stream" in download_res.headers.get("content-type", "")
+
+
 

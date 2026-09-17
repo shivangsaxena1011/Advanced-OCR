@@ -223,7 +223,25 @@ async def export_document_json(doc_id: str):
     return doc
 
 
+@router.get("/{doc_id}/download")
+async def download_original_document(doc_id: str):
+    doc = FileStorageService.load_document_result(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
+
+    file_path = FileStorageService.get_upload_path(doc_id)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="Original document file not found.")
+
+    return FileResponse(
+        path=file_path,
+        filename=doc.filename,
+        media_type="application/octet-stream",
+    )
+
+
 @router.post("/{doc_id}/ask")
+
 async def ask_docnova(doc_id: str, payload: dict):
     question = payload.get("question")
     if not question or not question.strip():
