@@ -91,3 +91,14 @@ def test_upload_valid_image():
     comp_data = comp_res.json()
     assert comp_data["similarity_score"] == 1.0
 
+    # Verify Block Update / Correction endpoint (Human in the loop)
+    first_block_id = doc["pages"][0]["ocr_blocks"][0]["id"]
+    patch_res = client.patch(
+        f"/api/v1/documents/{doc_id}/blocks/{first_block_id}",
+        json={"text": "CORRECTED INVOICE #9988"},
+    )
+    assert patch_res.status_code == 200
+    updated_doc = patch_res.json()["document"]
+    assert updated_doc["pages"][0]["ocr_blocks"][0]["text"] == "CORRECTED INVOICE #9988"
+
+

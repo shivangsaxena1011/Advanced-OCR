@@ -4,7 +4,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 
 from app.core.config import settings
-from app.schemas.document import DocumentResult, OCRBlock, ProcessingSummary
+from app.schemas.document import BlockUpdateRequest, DocumentResult, OCRBlock, ProcessingSummary
 from app.services.pipeline import DocumentPipeline
 from app.services.storage.file_store import FileStorageService
 
@@ -99,8 +99,53 @@ async def get_document_ocr(doc_id: str, page: Optional[int] = None):
     return all_blocks
 
 
+@router.patch("/{doc_id}/blocks/{block_id}")
+async def update_document_block(doc_id: str, block_id: str, payload: BlockUpdateRequest):
+    doc = FileStorageService.load_document_result(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document '{doc_id}' not found.")
+
+    updated = False
+    for page in doc.pages:
+        for block in page.ocr_blocks:
+            if block.id == block_id:
+                if payload.text is not None:
+                    block.text = payload.text
+                if payload.confidence is not None:
+                    block.confidence = payload.confidence
+                if payload.bbox is not None:
+                    block.bbox = payload.bbox
+                updated = True
+                break
+
+        for lb in page.layout_blocks:
+            if lb.id == block_id:
+                if payload.text is not None:
+                    lb.text = payload.text
+                if payload.layout_type is not None:
+                    lb.type = payload.layout_type
+                if payload.bbox is not None:
+                    lb.bbox = payload.bbox
+                updated = True
+                break
+            elif block_id in lb.source_ocr_blocks and payload.text is not None:
+                src_texts = [b.text for b in page.ocr_blocks if b.id in lb.source_ocr_blocks]
+                if src_texts:
+                    lb.text = " ".join(src_texts)
+
+        if updated:
+            break
+
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"Block '{block_id}' not found in document.")
+
+    FileStorageService.save_document_result(doc)
+    return {"status": "success", "message": f"Block '{block_id}' updated successfully.", "document": doc}
+
+
 @router.get("/{doc_id}/search")
 async def search_document(doc_id: str, q: str):
+
 
     if not q or not q.strip():
         return {"query": "", "total_matches": 0, "matches": []}

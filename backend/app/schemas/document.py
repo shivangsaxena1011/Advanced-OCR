@@ -152,3 +152,11 @@ class DocumentResult(BaseModel):
     fields: list[ExtractedField] = Field(default_factory=list)
     metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
     processing: ProcessingSummary = Field(default_factory=ProcessingSummary)
+
+
+class BlockUpdateRequest(BaseModel):
+    text: Optional[str] = None
+    layout_type: Optional[str] = None
+    confidence: Optional[float] = None
+    bbox: Optional[BBox] = None
+

@@ -14,8 +14,9 @@ import {
   Info,
 } from "lucide-react";
 import { DocumentResult, OCRBlock } from "@/types/document";
-import { getDocument } from "@/lib/api";
+import { getDocument, updateBlock } from "@/lib/api";
 import DocumentCanvas from "@/components/viewer/DocumentCanvas";
+
 import BlockInspector from "@/components/inspector/BlockInspector";
 import ThumbnailRail from "@/components/viewer/ThumbnailRail";
 
@@ -166,8 +167,9 @@ export default function DocumentWorkspacePage({
     document.pages.find((p) => p.page === activePageNum) || document.pages[0];
   const totalBlocks = document.pages.reduce((acc, p) => acc + p.ocr_blocks.length, 0);
 
-  const handleUpdateBlockText = (blockId: string, newText: string) => {
+  const handleUpdateBlockText = async (blockId: string, newText: string) => {
     if (!document) return;
+    // Optimistic UI update
     const updatedPages = document.pages.map((p) => ({
       ...p,
       ocr_blocks: p.ocr_blocks.map((b) =>
@@ -178,7 +180,18 @@ export default function DocumentWorkspacePage({
     if (selectedBlock && selectedBlock.id === blockId) {
       setSelectedBlock({ ...selectedBlock, text: newText });
     }
+
+    // Persist to backend
+    try {
+      const persistedDoc = await updateBlock(docId, blockId, { text: newText });
+      if (persistedDoc) {
+        setDocument(persistedDoc);
+      }
+    } catch (err) {
+      console.error("Failed to persist block update:", err);
+    }
   };
+
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-61px)] overflow-hidden bg-[#090d16]">
